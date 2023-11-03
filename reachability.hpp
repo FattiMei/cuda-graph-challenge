@@ -9,6 +9,7 @@
 std::vector<int> cpuReachability(CudaGraph &G);
 std::vector<int> gpuReachability(CudaGraph &G);
 
+
 void cpuKernel(
 	 int *nodePtrs
 	,int *nodeNeighbors

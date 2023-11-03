@@ -77,7 +77,6 @@ std::vector<int> cpuReachability(CudaGraph &G){
 }
 
 
-/*
 __global__ void gpuKernel(
 	 int *nodePtrs
 	,int *nodeNeighbors
@@ -112,4 +111,57 @@ __global__ void gpuKernel(
 		}
 	}
 }
-*/
+
+
+std::vector<int> gpuReachability(CudaGraph &G){
+	std::vector<int> result(G.nodeCount, 0);
+
+
+	int *currLevelNodes = new int[G.nodeCount];
+	int *nextLevelNodes = new int[G.nodeCount];
+	int *nodeVisited    = result.data();
+	int numCurrLevelNodes;
+	int numNextLevelNodes;
+
+
+	/*
+	// questa memoria deve essere scambiata continuamente tra cpu e gpu, bisogna allocarla correttamente
+	int *currLevelNodes = NULL;
+	int *nextLevelNodes = NULL;
+	int *nodeVisited    = NULL;
+	int *numNextLevelNodes = NULL;
+	int numCurrLevelNodes;
+	*/
+
+
+
+
+	// inizializzazione della coda
+	numCurrLevelNodes = 1;
+	currLevelNodes[0] = 0;
+
+
+	while(numCurrLevelNodes != 0){
+		numNextLevelNodes = 0;
+
+		gpuKernel<<<1, 1>>>(
+				G.nodePtrs
+				,G.nodeNeighbors
+				,nodeVisited
+				,currLevelNodes
+				,nextLevelNodes
+				,numCurrLevelNodes
+				,&numNextLevelNodes
+				);
+
+		numCurrLevelNodes = numNextLevelNodes;
+		std::swap(currLevelNodes, nextLevelNodes);
+	}
+
+
+	delete[] currLevelNodes;
+	delete[] nextLevelNodes;
+
+
+	return result;
+}
