@@ -35,7 +35,45 @@ void cpuKernel(
 }
 
 
-void cpuReachability(CudaGraph G, std::vector<int> &nodeVisited){
+std::vector<int> cpuReachability(CudaGraph &G){
+	std::vector<int> result(G.nodeCount, 0);
+
+
+	int *currLevelNodes = new int[G.nodeCount];
+	int *nextLevelNodes = new int[G.nodeCount];
+	int *nodeVisited    = result.data();
+	int numCurrLevelNodes;
+	int numNextLevelNodes;
+
+
+	// inizializzazione della coda
+	numCurrLevelNodes = 1;
+	currLevelNodes[0] = 0;
+
+
+	while(numCurrLevelNodes != 0){
+		numNextLevelNodes = 0;
+
+		cpuKernel(
+				G.nodePtrs
+				,G.nodeNeighbors
+				,nodeVisited
+				,currLevelNodes
+				,nextLevelNodes
+				,numCurrLevelNodes
+				,&numNextLevelNodes
+				);
+
+		numCurrLevelNodes = numNextLevelNodes;
+		std::swap(currLevelNodes, nextLevelNodes);
+	}
+
+
+	delete[] currLevelNodes;
+	delete[] nextLevelNodes;
+
+
+	return result;
 }
 
 

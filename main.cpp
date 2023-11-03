@@ -10,44 +10,18 @@ int main(int argc, char *argv[]){
 	CudaGraph cudaGraph(simpleGraph);
 
 
-	int *currLevelNodes = new int[cudaGraph.nodeCount];
-	int *nextLevelNodes = new int[cudaGraph.nodeCount];
-	int *nodeVisited    = new int[cudaGraph.nodeCount];
-	int numCurrLevelNodes;
-	int numNextLevelNodes;
+	std::vector<int> cpuVisited = cpuReachability(cudaGraph);
+	// std::vector<int> gpuVisited = gpuReachability(cudaGraph);
+	
+
+	int sum = 0;
+	for(int p : cpuVisited)
+		sum += p;
 
 
-	// inizializzazioni dei nodi visitati
-	for(int i = 0; i < cudaGraph.nodeCount; ++i)
-		nodeVisited[i] = 0;
+	std::cout << "raggiunti " << sum << " nodi" << std::endl;
 
 
-	// inizializzazione della coda
-	numCurrLevelNodes = 1;
-	currLevelNodes[0] = 0;
-
-
-	while(numCurrLevelNodes != 0){
-		numNextLevelNodes = 0;
-
-		cpuKernel(
-				cudaGraph.nodePtrs
-				,cudaGraph.nodeNeighbors
-				,nodeVisited
-				,currLevelNodes
-				,nextLevelNodes
-				,numCurrLevelNodes
-				,&numNextLevelNodes
-				);
-
-		numCurrLevelNodes = numNextLevelNodes;
-		std::swap(currLevelNodes, nextLevelNodes);
-	}
-
-
-	delete[] currLevelNodes;
-	delete[] nextLevelNodes;
-	delete[] nodeVisited;
 
 
 	return 0;
