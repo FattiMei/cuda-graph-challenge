@@ -39,7 +39,7 @@ void readHeader(std::istream &in, int &nodeCount, int &edgeCount){
 }
 
 
-void readEdges(std::istream &in, int edgeCountInFile, std::set<Edge> &E){
+void readEdges(std::istream &in, int nodeCount, int edgeCountInFile, std::set<Edge> &E){
 	E.clear();
 
 
@@ -51,9 +51,18 @@ void readEdges(std::istream &in, int edgeCountInFile, std::set<Edge> &E){
 		in >> u >> v;
 
 
-#ifdef ZERO_INDEXED
-			--u; --v;
+#ifdef ONE_INDEXED
+		--u; --v;
 #endif
+
+		if(u < 0 || v < 0 || u >= nodeCount || v >= nodeCount){
+			std::cerr
+				<< "il lato "
+				<< i
+				<< " è errato"
+				<< std::endl;
+			exit(EXIT_FAILURE);
+		}
 
 
 		E.insert({u,v});
@@ -73,7 +82,7 @@ SimpleGraph parseGraph(std::istream &in){
 
 	ignoreComments(in);
 	readHeader    (in, result.nodeCount, edgeCountInFile);
-	readEdges     (in, edgeCountInFile, result.Edges);
+	readEdges     (in, result.nodeCount, edgeCountInFile, result.Edges);
 
 
 	result.edgeCount = result.Edges.size();
