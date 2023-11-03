@@ -38,14 +38,16 @@ struct SimpleGraph{
 };
 
 
-struct CudaGraph{
+struct CSRGraph{
 	int nodeCount;
+	int edgeCount;
 	int *nodePtrs;
 	int *nodeNeighbors;
 
 
-	CudaGraph(SimpleGraph &G){
+	CSRGraph(SimpleGraph &G){
 		nodeCount     = G.nodeCount;
+		edgeCount     = G.edgeCount;
 		nodePtrs      = new int[G.nodeCount+1];
 		nodeNeighbors = new int[G.edgeCount];
 
@@ -94,7 +96,7 @@ struct CudaGraph{
 	}
 
 
-	~CudaGraph(){
+	~CSRGraph(){
 		delete[] nodePtrs;
 		delete[] nodeNeighbors;
 	}

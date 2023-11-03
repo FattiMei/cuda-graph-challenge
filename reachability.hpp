@@ -6,8 +6,8 @@
 #include "graph.hpp"
 
 
-std::vector<int> cpuReachability(CudaGraph &G);
-std::vector<int> gpuReachability(CudaGraph &G);
+std::vector<int> cpuReachability(CSRGraph &G);
+std::vector<int> gpuReachability(CSRGraph &G);
 
 
 void cpuKernel(
