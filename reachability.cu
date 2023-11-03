@@ -117,50 +117,73 @@ std::vector<int> gpuReachability(CudaGraph &G){
 	std::vector<int> result(G.nodeCount, 0);
 
 
-	int *currLevelNodes = new int[G.nodeCount];
-	int *nextLevelNodes = new int[G.nodeCount];
-	int *nodeVisited    = result.data();
-	int numCurrLevelNodes;
-	int numNextLevelNodes;
-
-
 	/*
-	// questa memoria deve essere scambiata continuamente tra cpu e gpu, bisogna allocarla correttamente
-	int *currLevelNodes = NULL;
-	int *nextLevelNodes = NULL;
-	int *nodeVisited    = NULL;
-	int *numNextLevelNodes = NULL;
-	int numCurrLevelNodes;
+		Nome				Tipo			Relazione
+		nodePtrs			int[nodeCount]	HOST -> DEVICE
+		nodeNeighbors		int[nodeCount]	HOST -> DEVICE
+		nodeVisited			int[nodeCount]	DEVICE -> HOST (ma ha bisogno di essere inizializzato)
+		currLevelNodes		int[nodeCount]	DEVICE
+		nextLevelNodes		int[nodeCount]	DEVICE (ma ha bisogno di essere inizializzato)
+		numNextLevelNodes	int*			DEVICE (ma ha bisogno di essere inizializzato)
+		numCurrLevelNodes	int				HOST -> parametro della funzione al device
 	*/
 
 
+	int *nodePtrs = NULL;
+	int *nodeNeighbors = NULL;
+	int *nodeVisited = NULL;
+	int *currLevelNodes = NULL;
+	int *nextLevelNodes = NULL;
+	int *numNextLevelNodes = NULL;
+	int numCurrLevelNodes;
+
+
+	cudaMalloc(&nodePtrs,       sizeof(int) * G.nodeCount);
+	cudaMalloc(&nodeNeighbors,  sizeof(int) * G.nodeCount);
+	cudaMalloc(&nodeVisited,    sizeof(int) * G.nodeCount);
+	cudaMalloc(&currLevelNodes, sizeof(int) * G.nodeCount);
+	cudaMalloc(&nextLevelNodes, sizeof(int) * G.nodeCount);
+	cudaMalloc(&numNextLevelNodes, sizeof(int));
+
+
+	cudaMemcpy(nodePtrs,           G.nodePtrs, sizeof(int) * G.nodeCount, cudaMemcpyHostToDevice);
+	cudaMemcpy(nodeNeighbors, G.nodeNeighbors, sizeof(int) * G.nodeCount, cudaMemcpyHostToDevice);
 
 
 	// inizializzazione della coda
 	numCurrLevelNodes = 1;
-	currLevelNodes[0] = 0;
+
+	// currLevelNodes[0] = 0;
+	cudaMemset(currLevelNodes, 0, sizeof(int));
 
 
 	while(numCurrLevelNodes != 0){
-		numNextLevelNodes = 0;
+		// numNextLevelNodes = 0;
+		cudaMemset(numNextLevelNodes, 0, sizeof(int));
 
-		gpuKernel<<<1, 1>>>(
-				G.nodePtrs
-				,G.nodeNeighbors
+		gpuKernel<<<1, 1024>>>(
+				 nodePtrs
+				,nodeNeighbors
 				,nodeVisited
 				,currLevelNodes
 				,nextLevelNodes
 				,numCurrLevelNodes
-				,&numNextLevelNodes
+				,numNextLevelNodes
 				);
 
-		numCurrLevelNodes = numNextLevelNodes;
+		// numCurrLevelNodes = *numNextLevelNodes;
+		cudaMemcpy(&numCurrLevelNodes, numNextLevelNodes, sizeof(int), cudaMemcpyDeviceToHost);
+
 		std::swap(currLevelNodes, nextLevelNodes);
 	}
 
 
-	delete[] currLevelNodes;
-	delete[] nextLevelNodes;
+	cudaFree(nodePtrs);
+	cudaFree(nodeNeighbors);
+	cudaFree(nodeVisited);
+	cudaFree(currLevelNodes);
+	cudaFree(nextLevelNodes);
+	cudaFree(numNextLevelNodes);
 
 
 	return result;
