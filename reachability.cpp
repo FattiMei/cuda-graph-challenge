@@ -25,7 +25,7 @@ void cpuKernel(
 
 				// aggiunta alla coda
 				nextLevelNodes[*numNextLevelNodes] = v;
-				++(numNextLevelNodes);
+				++(*numNextLevelNodes);
 
 
 				// è garantito che l'elemento non sia duplicato nella coda perchè è segnato come visitato
@@ -39,6 +39,7 @@ void cpuReachability(CudaGraph G, std::vector<int> &nodeVisited){
 }
 
 
+/*
 __global__ void gpuKernel(
 	 int *nodePtrs
 	,int *nodeNeighbors
@@ -73,3 +74,4 @@ __global__ void gpuKernel(
 		}
 	}
 }
+*/

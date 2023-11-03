@@ -1,12 +1,12 @@
 all:
-	nvcc -o test main.cu reachability.cu parse.cpp -O2
-	nvcc -DUNDIRECTED -DZERO_INDEXED -o testz main.cu parse.cpp reachability.cu
+	g++ -DUNDIRECTED -DONE_INDEXED  -fsanitize=address -o test_undirected_one_indexed main.cpp reachability.cpp parse.cpp -O2
+	g++              -DONE_INDEXED  -fsanitize=address -o test_directed_one_indexed   main.cpp reachability.cpp parse.cpp -O2
 
 
 run: all
-	./test < datasets/email-Enron.mtx
-	./test < datasets/roadNet-CA.mtx
-	./test < datasets/roadNet-PA.mtx
-	./test < datasets/roadNet-TX.mtx
-	./test < datasets/web-Google.mtx
-	./test < datasets/web-Stanford.mtx
+	./test_undirected_one_indexed < datasets/email-Enron.mtx
+	./test_undirected_one_indexed < datasets/roadNet-CA.mtx
+	./test_undirected_one_indexed < datasets/roadNet-PA.mtx
+	./test_undirected_one_indexed < datasets/roadNet-TX.mtx
+	./test_directed_one_indexed   < datasets/web-Google.mtx
+	./test_directed_one_indexed   < datasets/web-Stanford.mtx
