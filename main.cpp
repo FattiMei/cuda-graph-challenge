@@ -24,7 +24,6 @@ int main(int argc, char *argv[]){
 	CSRGraph cudaGraph(simpleGraph);
 
 
-	/*
 	std::vector<int> cpuVisited = cpuReachability(cudaGraph);
 	std::vector<int> gpuVisited = gpuReachability(cudaGraph);
 
@@ -53,7 +52,6 @@ int main(int argc, char *argv[]){
 		<< "nodi raggiunti (GPU) "
 		<< reached(gpuVisited)
 		<< std::endl;
-	*/
 
 
 	return 0;
