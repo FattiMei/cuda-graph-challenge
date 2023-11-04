@@ -8,6 +8,7 @@
 
 std::vector<int> cpuReachability(CSRGraph &G, size_t &kernelTimeMilliseconds);
 std::vector<int> gpuReachability(CSRGraph &G, size_t &kernelTimeMilliseconds);
+std::vector<int> gpuReachabilityOptimized(CSRGraph &G, size_t &kernelTimeMilliseconds);
 
 
 #endif
