@@ -1,4 +1,5 @@
 #include <iostream>
+#include <chrono>
 #include <cuda.h>
 #include "graph.hpp"
 #include "parse.hpp"
@@ -24,8 +25,22 @@ int main(int argc, char *argv[]){
 	CSRGraph cudaGraph(simpleGraph);
 
 
-	std::vector<int> cpuVisited = cpuReachability(cudaGraph);
-	std::vector<int> gpuVisited = gpuReachability(cudaGraph);
+	// misuro i tempi totali di computazione (trasferimento incluso)
+	using namespace std::chrono;
+	std::chrono::high_resolution_clock clock;
+
+
+	auto t0 = clock.now();
+		std::vector<int> cpuVisited = cpuReachability(cudaGraph);
+	auto t1 = clock.now();
+
+	const auto cpuTime = duration_cast<milliseconds>(t1-t0).count();
+
+	t0 = clock.now();
+		std::vector<int> gpuVisited = gpuReachability(cudaGraph);
+	t1 = clock.now();
+
+	const auto gpuTime = duration_cast<milliseconds>(t1-t0).count();
 
 
 	bool correct = true;
@@ -46,11 +61,17 @@ int main(int argc, char *argv[]){
 
 
 	std::cout
-		<< "nodi raggiunti (CPU) "
+		<< "(CPU) raggiunti "
 		<< reached(cpuVisited)
+		<< " nodi in "
+		<< cpuTime
+		<< " ms"
 		<< std::endl
-		<< "nodi raggiunti (GPU) "
+		<< "(GPU) raggiunti "
 		<< reached(gpuVisited)
+		<< " nodi in "
+		<< gpuTime
+		<< " ms"
 		<< std::endl;
 
 
