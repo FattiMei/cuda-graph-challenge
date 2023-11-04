@@ -1,5 +1,9 @@
 #include "reachability.hpp"
 #include "error.hpp"
+#include <chrono>
+
+
+using namespace std::chrono;
 
 
 void cpuKernel(
@@ -36,8 +40,9 @@ void cpuKernel(
 }
 
 
-std::vector<int> cpuReachability(CSRGraph &G){
+std::vector<int> cpuReachability(CSRGraph &G, size_t &kernelTimeMilliseconds){
 	std::vector<int> result(G.nodeCount, 0);
+	std::chrono::high_resolution_clock clock;
 
 
 	int *currLevelNodes = new int[G.nodeCount];
@@ -46,6 +51,9 @@ std::vector<int> cpuReachability(CSRGraph &G){
 	int numCurrLevelNodes;
 	int numNextLevelNodes;
 
+
+	// INIZIO MISURA
+	const auto t0 = clock.now();
 
 	// inizializzazione della coda
 	numCurrLevelNodes = 1;
@@ -68,6 +76,11 @@ std::vector<int> cpuReachability(CSRGraph &G){
 		numCurrLevelNodes = numNextLevelNodes;
 		std::swap(currLevelNodes, nextLevelNodes);
 	}
+
+
+	// FINE MISURA
+	const auto t1 = clock.now();
+	kernelTimeMilliseconds = duration_cast<milliseconds>(t1-t0).count();
 
 
 	delete[] currLevelNodes;
@@ -115,8 +128,9 @@ __global__ void gpuKernel(
 }
 
 
-std::vector<int> gpuReachability(CSRGraph &G){
+std::vector<int> gpuReachability(CSRGraph &G, size_t &kernelTimeMilliseconds){
 	std::vector<int> result(G.nodeCount, 0);
+	std::chrono::high_resolution_clock clock;
 
 
 	/*
@@ -151,6 +165,9 @@ std::vector<int> gpuReachability(CSRGraph &G){
 	CHECK_CUDA_ERROR(cudaMemcpy(nodePtrs,           G.nodePtrs, sizeof(int) * (G.nodeCount+1), cudaMemcpyHostToDevice));
 	CHECK_CUDA_ERROR(cudaMemcpy(nodeNeighbors, G.nodeNeighbors, sizeof(int) * G.edgeCount,     cudaMemcpyHostToDevice));
 
+
+	// INIZIO MISURA
+	const auto t0 = clock.now();
 
 	// inizializzazione della coda
 	numCurrLevelNodes = 1;
@@ -187,6 +204,12 @@ std::vector<int> gpuReachability(CSRGraph &G){
 
 		std::swap(currLevelNodes, nextLevelNodes);
 	}
+
+
+	// FINE MISURA
+	const auto t1 = clock.now();
+	kernelTimeMilliseconds = duration_cast<milliseconds>(t1-t0).count();
+
 
 	CHECK_CUDA_ERROR(cudaMemcpy(result.data(), nodeVisited, G.nodeCount * sizeof(int), cudaMemcpyDeviceToHost));
 

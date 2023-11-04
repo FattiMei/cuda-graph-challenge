@@ -25,22 +25,31 @@ int main(int argc, char *argv[]){
 	CSRGraph cudaGraph(simpleGraph);
 
 
+	size_t cpuTotalTime,
+		   cpuComputationTime,
+		   gpuTotalTime,
+		   gpuComputationTime;
+
+
 	// misuro i tempi totali di computazione (trasferimento incluso)
 	using namespace std::chrono;
 	std::chrono::high_resolution_clock clock;
 
 
 	auto t0 = clock.now();
-		std::vector<int> cpuVisited = cpuReachability(cudaGraph);
+		std::vector<int> cpuVisited = cpuReachability(cudaGraph, cpuComputationTime);
 	auto t1 = clock.now();
 
-	const auto cpuTime = duration_cast<milliseconds>(t1-t0).count();
+	cpuTotalTime = duration_cast<milliseconds>(t1-t0).count();
+
+
 
 	t0 = clock.now();
-		std::vector<int> gpuVisited = gpuReachability(cudaGraph);
+		std::vector<int> gpuVisited = gpuReachability(cudaGraph, gpuComputationTime);
 	t1 = clock.now();
 
-	const auto gpuTime = duration_cast<milliseconds>(t1-t0).count();
+	gpuTotalTime = duration_cast<milliseconds>(t1-t0).count();
+
 
 
 	bool correct = true;
@@ -64,13 +73,21 @@ int main(int argc, char *argv[]){
 		<< "(CPU) raggiunti "
 		<< reached(cpuVisited)
 		<< " nodi in "
-		<< cpuTime
+		<< cpuTotalTime
+		<< " ms"
+		<< "\t"
+		<< "computation time "
+		<< cpuComputationTime
 		<< " ms"
 		<< std::endl
 		<< "(GPU) raggiunti "
 		<< reached(gpuVisited)
 		<< " nodi in "
-		<< gpuTime
+		<< gpuTotalTime
+		<< " ms"
+		<< "\t"
+		<< "computation time "
+		<< gpuComputationTime
 		<< " ms"
 		<< std::endl;
 
