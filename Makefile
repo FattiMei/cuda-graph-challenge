@@ -25,5 +25,7 @@ run: all
 	./test_directed_one_indexed   < datasets/web-Stanford.mtx
 	./test_directed_one_indexed   < datasets/soc-Epinions1.mtx
 	./test_undirected_zero_indexed < datasets/standard4.txt
+	./test_undirected_zero_indexed < datasets/standard5.txt
+	./test_undirected_zero_indexed < datasets/standard6.txt
 	./test_undirected_zero_indexed < datasets/out.txt
 	./test_undirected_zero_indexed < datasets/erdos_graph.txt
