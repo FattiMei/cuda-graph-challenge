@@ -97,12 +97,11 @@ __global__ void gpuKernel(
 		const int neighborCount = nodePtrs[u+1] - nodePtrs[u];
 
 
-		for(int j = 0; i < neighborCount; ++j){
+		// occhio al contatore di questo ciclo, era qui il bug
+		for(int j = 0; j < neighborCount; ++j){
 			const int v = nodeNeighbors[nodePtrs[u] + j];
 
 
-			// riga maledetta, mi ha tenuto 2 ore di debugging
-			//if(atomicCAS(nodeVisited + v, 0, 1) == 0){
 			if(atomicCAS(&nodeVisited[v], 0, 1) == 0){
 				// sono il primo che fa la modifica, lo metto in coda
 				int queuePtr = atomicAdd(numNextLevelNodes, 1);
@@ -116,35 +115,6 @@ __global__ void gpuKernel(
 }
 
 
-__global__ void addKernel(
-	 int *nodePtrs
-	,int *nodeNeighbors
-	,int *nodeVisited
-	,int *currLevelNodes
-	,int *nextLevelNodes
-	,const unsigned int numCurrLevelNodes
-	,int *numNextLevelNodes){
-
-  int i = threadIdx.x + blockIdx.x * blockDim.x;
-
-  if(i < numCurrLevelNodes){
-    const int u = currLevelNodes[i];
-    const int neighborCount = nodePtrs[u+1] - nodePtrs[u];
-
-      for(int j = 0; j < neighborCount; ++j){
-        const int v = nodeNeighbors[nodePtrs[u] + j];
-
-        if(atomicCAS(&nodeVisited[v], 0, 1) == 0){
-
-          int queuePtr = atomicAdd(numNextLevelNodes, 1);
-          nextLevelNodes[queuePtr] = v;
-
-        }
-      }
-	}
-}
-
-
 std::vector<int> gpuReachability(CSRGraph &G){
 	std::vector<int> result(G.nodeCount, 0);
 
@@ -152,7 +122,7 @@ std::vector<int> gpuReachability(CSRGraph &G){
 	/*
 		Nome				Tipo				Relazione
 		nodePtrs			int[nodeCount+1]	HOST -> DEVICE
-		nodeNeighbors		int[nodeCount]		HOST -> DEVICE
+		nodeNeighbors		int[edgeCount]		HOST -> DEVICE
 		nodeVisited			int[nodeCount]		DEVICE -> HOST (ma ha bisogno di essere inizializzato)
 		currLevelNodes		int[nodeCount]		DEVICE
 		nextLevelNodes		int[nodeCount]		DEVICE (ma ha bisogno di essere inizializzato)
@@ -191,35 +161,34 @@ std::vector<int> gpuReachability(CSRGraph &G){
 	CHECK_CUDA_ERROR(cudaMemset(nodeVisited, 0, sizeof(int) * G.nodeCount));
 
 
-	int iter = 0;
 	while(numCurrLevelNodes != 0){
 		// numNextLevelNodes = 0;
 		CHECK_CUDA_ERROR(cudaMemset(numNextLevelNodes, 0, sizeof(int)));
 
-    int threadsPerBlock = 1024;
-    int blockSize = (numCurrLevelNodes + threadsPerBlock - 1) / threadsPerBlock;
+		int threadsPerBlock = 1024;
+		int blockSize = (numCurrLevelNodes + threadsPerBlock - 1) / threadsPerBlock;
 
-		addKernel<<<blockSize, threadsPerBlock>>>(
-				 nodePtrs
+		gpuKernel<<<blockSize, threadsPerBlock>>>(
+				nodePtrs
 				,nodeNeighbors
 				,nodeVisited
 				,currLevelNodes
 				,nextLevelNodes
 				,numCurrLevelNodes
 				,numNextLevelNodes
-				);
+		);
+
 		CHECK_CUDA_ERROR(cudaPeekAtLastError());
+
 
 		// numCurrLevelNodes = *numNextLevelNodes;
 		CHECK_CUDA_ERROR(cudaMemcpy(&numCurrLevelNodes, numNextLevelNodes, sizeof(int), cudaMemcpyDeviceToHost));
 
-		std::swap(currLevelNodes, nextLevelNodes);
 
-    //std::cout << numCurrLevelNodes << std::endl;
-		++iter;
+		std::swap(currLevelNodes, nextLevelNodes);
 	}
 
-  CHECK_CUDA_ERROR(cudaMemcpy(result.data(), nodeVisited, G.nodeCount * sizeof(int), cudaMemcpyDeviceToHost));
+	CHECK_CUDA_ERROR(cudaMemcpy(result.data(), nodeVisited, G.nodeCount * sizeof(int), cudaMemcpyDeviceToHost));
 
 
 	CHECK_CUDA_ERROR(cudaFree(nodePtrs));
