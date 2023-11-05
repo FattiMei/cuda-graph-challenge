@@ -19,17 +19,21 @@ bool checkCorrectness(std::vector<int> &reference, std::vector<int> &check){
 int main(int argc, char *argv[]){
 	SimpleGraph simpleGraph = parseGraph(std::cin);
 	CSRGraph cudaGraph(simpleGraph);
+	
+
 	CudaContext ctx(cudaGraph);
 
 
 	size_t cpuTime,
 		   gpuTime,
-		   gpuOptTime;
+		   gpuOptTime,
+		   gpuShrTime;
 
 
 	std::vector<int> reference     = cpuReachability   (cudaGraph, cpuTime);
 	std::vector<int> gpuVisited    = gpuReachability   (ctx, gpuTime);
 	std::vector<int> gpuOptVisited = gpuReachabilityOpt(ctx, gpuOptTime);
+	std::vector<int> gpuShrVisited = gpuReachabilityShr(ctx, gpuShrTime);
 
 
 	std::cout
@@ -38,7 +42,7 @@ int main(int argc, char *argv[]){
 		<< " us"
 		<< std::endl
 
-		<< "gpu naive "
+		<< "gpu naive     "
 		<< gpuTime
 		<< " us"
 		<< "\t"
@@ -46,12 +50,20 @@ int main(int argc, char *argv[]){
 		<< (double) cpuTime / (double) gpuTime
 		<< std::endl
 
-		<< "gpu opt "
+		<< "gpu opt       "
 		<< gpuOptTime
 		<< " us"
 		<< "\t"
 		<< "speedup "
 		<< (double) cpuTime / (double) gpuOptTime
+		<< std::endl
+
+		<< "gpu shr       "
+		<< gpuShrTime
+		<< " us"
+		<< "\t"
+		<< "speedup "
+		<< (double) cpuTime / (double) gpuShrTime
 		<< std::endl
 		<< std::endl;
 
@@ -61,6 +73,9 @@ int main(int argc, char *argv[]){
 	}
 	if(!checkCorrectness(reference, gpuOptVisited)){
 		std::cout << "gpu opt bad" << std::endl;
+	}
+	if(!checkCorrectness(reference, gpuShrVisited)){
+		std::cout << "gpu shr bad" << std::endl;
 	}
 
 
