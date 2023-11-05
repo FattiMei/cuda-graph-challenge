@@ -162,18 +162,36 @@ __global__ void gpuKernelOptimizedIteration(
 }
 
 
+
 __global__ void gpuKernelOptimizedShared(
-	 int *nodePtrs
-	,int *nodeNeighbors
-	,int *nodeVisited
-	,int *currLevelNodes
-	,int *nextLevelNodes
-	,const unsigned int numCurrLevelNodes
-	,int *numNextLevelNodes){
+		int *nodePtrs
+		,int *nodeNeighbors
+		,int *nodeVisited
+		,int *currLevelNodes
+		,int *nextLevelNodes
+		,const unsigned int numCurrLevelNodes
+		,int *numNextLevelNodes){
+
+#define BLOCK_QUEUE_SIZE 2048
+
+
+	__shared__ int blockQueue[BLOCK_QUEUE_SIZE];
+	__shared__ int blockQueuePtr;
+	__shared__ int globalQueueOffset;
+	__shared__ int blockQueueCount;
+
+
+	blockQueuePtr = 0;
+	globalQueueOffset = 0;
+	blockQueueCount = 0;
+	__syncthreads();
 
 
 	// solo blocchi lineari
 	int i = threadIdx.x + blockIdx.x * blockDim.x;
+
+
+
 
 
 	if(i < numCurrLevelNodes){
@@ -185,13 +203,32 @@ __global__ void gpuKernelOptimizedShared(
 		for(int *v = begin; v < end; ++v){
 			if(atomicCAS(nodeVisited + (*v), 0, 1) == 0){
 				// sono il primo che fa la modifica, lo metto in coda
-				int queuePtr = atomicAdd(numNextLevelNodes, 1);
+				int localQueuePtr = atomicAdd(&blockQueuePtr, 1);
 
-
-				// sono l'unico che scrive qua dentro
-				nextLevelNodes[queuePtr] = *v;
+				if(localQueuePtr < BLOCK_QUEUE_SIZE){
+					atomicAdd(&blockQueueCount, 1);
+					blockQueue[localQueuePtr] = *v;
+				}
+				else{
+					// aggiunta alla coda globale
+					int queuePtr = atomicAdd(numNextLevelNodes, 1);
+					nextLevelNodes[queuePtr] = *v;
+				}
 			}
 		}
+	}
+
+	// adesso bisogna fare il commit della coda locale sulla coda globale (gli elementi non sono ripetuti per costruzione)
+	__syncthreads();
+
+	if(i == 0){
+		globalQueueOffset = atomicAdd(numNextLevelNodes, blockQueueCount);
+	}
+
+
+	__syncthreads();
+	if(i < blockQueuePtr){
+		nextLevelNodes[globalQueueOffset + i] = blockQueue[i];
 	}
 }
 
