@@ -35,27 +35,33 @@ int main(int argc, char *argv[]){
 	std::cout
 		<< "cpu reference "
 		<< cpuTime
-		<< " ms"
+		<< " us"
 		<< std::endl
+
 		<< "gpu naive "
 		<< gpuTime
-		<< " ms"
+		<< " us"
+		<< "\t"
+		<< "speedup "
+		<< (double) cpuTime / (double) gpuTime
 		<< std::endl
+
 		<< "gpu opt "
 		<< gpuOptTime
-		<< " ms"
+		<< " us"
+		<< "\t"
+		<< "speedup "
+		<< (double) cpuTime / (double) gpuOptTime
 		<< std::endl
 		<< std::endl;
 
 
-	std::cout
-		<< "gpu naive "
-		<< (checkCorrectness(reference, gpuVisited) == true ? "ok" : "bad")
-		<< std::endl
-		<< "gpu opt "
-		<< (checkCorrectness(reference, gpuOptVisited) == true ? "ok" : "bad")
-		<< std::endl
-		<< std::endl;
+	if(!checkCorrectness(reference, gpuVisited)){
+		std::cout << "gpu naive bad" << std::endl;
+	}
+	if(!checkCorrectness(reference, gpuOptVisited)){
+		std::cout << "gpu opt bad" << std::endl;
+	}
 
 
 

@@ -80,7 +80,7 @@ std::vector<int> cpuReachability(CSRGraph &G, size_t &kernelTimeMilliseconds){
 
 	// FINE MISURA
 	const auto t1 = clock.now();
-	kernelTimeMilliseconds = duration_cast<milliseconds>(t1-t0).count();
+	kernelTimeMilliseconds = duration_cast<microseconds>(t1-t0).count();
 
 
 	delete[] currLevelNodes;
@@ -209,7 +209,7 @@ std::vector<int> gpuReachability(CudaContext &ctx, size_t &kernelTimeMillisecond
 
 	// FINE MISURA
 	const auto t1 = clock.now();
-	kernelTimeMilliseconds = duration_cast<milliseconds>(t1-t0).count();
+	kernelTimeMilliseconds = duration_cast<microseconds>(t1-t0).count();
 
 
 	CHECK_CUDA_ERROR(cudaMemcpy(result.data(), ctx.nodeVisited, ctx.nodeCount * sizeof(int), cudaMemcpyDeviceToHost));
@@ -267,7 +267,7 @@ std::vector<int> gpuReachabilityOpt(CudaContext &ctx, size_t &kernelTimeMillisec
 
 	// FINE MISURA
 	const auto t1 = clock.now();
-	kernelTimeMilliseconds = duration_cast<milliseconds>(t1-t0).count();
+	kernelTimeMilliseconds = duration_cast<microseconds>(t1-t0).count();
 
 
 	CHECK_CUDA_ERROR(cudaMemcpy(result.data(), ctx.nodeVisited, ctx.nodeCount * sizeof(int), cudaMemcpyDeviceToHost));
