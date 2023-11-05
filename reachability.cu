@@ -218,3 +218,61 @@ std::vector<int> gpuReachability(CudaContext &ctx, size_t &kernelTimeMillisecond
 
 	return result;
 }
+
+
+std::vector<int> gpuReachabilityOpt(CudaContext &ctx, size_t &kernelTimeMilliseconds){
+	std::vector<int> result(ctx.nodeCount, 0);
+	std::chrono::high_resolution_clock clock;
+
+
+	// INIZIO MISURA
+	const auto t0 = clock.now();
+
+	// inizializzazione della coda
+	ctx.numCurrLevelNodes = 1;
+
+
+	// currLevelNodes[0] = 0;
+	CHECK_CUDA_ERROR(cudaMemset(ctx.currLevelNodes, 0, sizeof(int)));
+	CHECK_CUDA_ERROR(cudaMemset(ctx.nodeVisited, 0, sizeof(int) * ctx.nodeCount));
+
+
+	while(ctx.numCurrLevelNodes != 0){
+		// numNextLevelNodes = 0;
+		CHECK_CUDA_ERROR(cudaMemset(ctx.numNextLevelNodes, 0, sizeof(int)));
+
+		int threadsPerBlock = 1024;
+		int blockSize = (ctx.numCurrLevelNodes + threadsPerBlock - 1) / threadsPerBlock;
+
+		gpuKernelOptimizedIteration<<<blockSize, threadsPerBlock>>>(
+				ctx.nodePtrs
+				,ctx.nodeNeighbors
+				,ctx.nodeVisited
+				,ctx.currLevelNodes
+				,ctx.nextLevelNodes
+				,ctx.numCurrLevelNodes
+				,ctx.numNextLevelNodes
+		);
+
+		CHECK_CUDA_ERROR(cudaPeekAtLastError());
+
+
+		// numCurrLevelNodes = *numNextLevelNodes;
+		CHECK_CUDA_ERROR(cudaMemcpy(&ctx.numCurrLevelNodes, ctx.numNextLevelNodes, sizeof(int), cudaMemcpyDeviceToHost));
+
+
+		std::swap(ctx.currLevelNodes, ctx.nextLevelNodes);
+	}
+
+
+	// FINE MISURA
+	const auto t1 = clock.now();
+	kernelTimeMilliseconds = duration_cast<milliseconds>(t1-t0).count();
+
+
+	CHECK_CUDA_ERROR(cudaMemcpy(result.data(), ctx.nodeVisited, ctx.nodeCount * sizeof(int), cudaMemcpyDeviceToHost));
+
+
+
+	return result;
+}

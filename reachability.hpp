@@ -57,9 +57,9 @@ struct CudaContext{
 };
 
 
-std::vector<int> cpuReachability(CudaContext &ctx, size_t &kernelTimeMilliseconds);
+std::vector<int> cpuReachability(CSRGraph &G, size_t &kernelTimeMilliseconds);
 std::vector<int> gpuReachability(CudaContext &ctx, size_t &kernelTimeMilliseconds);
-std::vector<int> gpuReachabilityOptimized(CudaContext &ctx, size_t &kernelTimeMilliseconds);
+std::vector<int> gpuReachabilityOpt(CudaContext &ctx, size_t &kernelTimeMilliseconds);
 
 
 #endif
