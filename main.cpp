@@ -1,6 +1,5 @@
 #include <iostream>
 #include <chrono>
-#include <cuda.h>
 #include "graph.hpp"
 #include "parse.hpp"
 #include "reachability.hpp"
@@ -23,6 +22,7 @@ int reached(std::vector<int> const &V){
 int main(int argc, char *argv[]){
 	SimpleGraph simpleGraph = parseGraph(std::cin);
 	CSRGraph cudaGraph(simpleGraph);
+	CudaContext ctx(cudaGraph);
 
 
 	// misuro i tempi totali di computazione (trasferimento incluso)
@@ -34,8 +34,9 @@ int main(int argc, char *argv[]){
 		   gpuOptTime;
 
 
-	std::vector<int> gpuVisited = gpuReachability(cudaGraph, gpuTime);
-	std::vector<int> gpuOptVisited = gpuReachabilityOptimized(cudaGraph, gpuOptTime);
+	std::vector<int> gpuVisited = gpuReachability(ctx, gpuTime);
+	// per il momento faccio così, poi devo sistemare con una macro
+	std::vector<int> gpuOptVisited = gpuReachability(ctx, gpuOptTime);
 
 
 

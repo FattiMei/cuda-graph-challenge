@@ -1,3 +1,11 @@
+#ifndef __ERROR_H_INCLUDED__
+#define __ERROR_H_INCLUDED__
+
+
+#include <cuda.h>
+#include <cuda_runtime_api.h>
+
+
 #define CHECK_CUDA_ERROR(val) check((val), #val, __FILE__, __LINE__)
 
 
@@ -20,3 +28,6 @@ void check(T err, const char* const func, const char* const file, const int line
 		exit(EXIT_FAILURE);
 	}
 }
+
+
+#endif
