@@ -424,7 +424,7 @@ std::vector<int> gpuReachabilityShrDebug(CudaContext &ctx, size_t &kernelTimeMil
 		// numNextLevelNodes = 0;
 		CHECK_CUDA_ERROR(cudaMemset(ctx.numNextLevelNodes, 0, sizeof(int)));
 
-		int threadsPerBlock = 64;
+		int threadsPerBlock = 1024;
 		int blockSize = (ctx.numCurrLevelNodes + threadsPerBlock - 1) / threadsPerBlock;
 
 		gpuKernelOptimizedShared<<<blockSize, threadsPerBlock>>>(
