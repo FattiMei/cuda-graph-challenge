@@ -175,6 +175,7 @@ __global__ void gpuKernelOptimizedShared(
 
 	__shared__ int blockQueue[BLOCK_QUEUE_SIZE];
 	__shared__ int blockQueuePtr;
+	__shared__ int globalQueueOffset;
 
 
 	// solo blocchi lineari
@@ -211,16 +212,17 @@ __global__ void gpuKernelOptimizedShared(
 		}
 	}
 
-	// adesso bisogna fare il commit della coda locale sulla coda globale (gli elementi non sono ripetuti per costruzione)
 	__syncthreads();
 
+	// adesso bisogna fare il commit della coda locale sulla coda globale (gli elementi non sono ripetuti per costruzione)
 	if(threadIdx.x == 0){
 		if(blockQueuePtr > BLOCK_QUEUE_SIZE){
 			blockQueuePtr = BLOCK_QUEUE_SIZE;
 		}
 
-		for(int j = 0; j < blockQueuePtr; ++j){
-			nextLevelNodes[atomicAdd(numNextLevelNodes,1)] = blockQueue[j];
+		globalQueueOffset = atomicAdd(numNextLevelNodes, blockQueuePtr);
+		for(int k = 0; k < blockQueuePtr; ++k){
+			nextLevelNodes[globalQueueOffset + k] = blockQueue[k];
 		}
 	}
 }
