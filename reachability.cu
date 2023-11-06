@@ -177,21 +177,17 @@ __global__ void gpuKernelOptimizedShared(
 
 	__shared__ int blockQueue[BLOCK_QUEUE_SIZE];
 	__shared__ int blockQueuePtr;
-	__shared__ int globalQueueOffset;
-	__shared__ int blockQueueCount;
-
-
-	blockQueuePtr = 0;
-	globalQueueOffset = 0;
-	blockQueueCount = 0;
-	__syncthreads();
 
 
 	// solo blocchi lineari
 	int i = threadIdx.x + blockIdx.x * blockDim.x;
 
 
+	if(i == 0){
+		blockQueuePtr = 0;
+	}
 
+	__syncthreads();
 
 
 	if(i < numCurrLevelNodes){
@@ -202,11 +198,10 @@ __global__ void gpuKernelOptimizedShared(
 
 		for(int *v = begin; v < end; ++v){
 			if(atomicCAS(nodeVisited + (*v), 0, 1) == 0){
-				// sono il primo che fa la modifica, lo metto in coda
+				// provo in ogni caso ad aggiungere alla coda locale
 				int localQueuePtr = atomicAdd(&blockQueuePtr, 1);
 
 				if(localQueuePtr < BLOCK_QUEUE_SIZE){
-					atomicAdd(&blockQueueCount, 1);
 					blockQueue[localQueuePtr] = *v;
 				}
 				else{
@@ -222,13 +217,13 @@ __global__ void gpuKernelOptimizedShared(
 	__syncthreads();
 
 	if(i == 0){
-		globalQueueOffset = atomicAdd(numNextLevelNodes, blockQueueCount);
-	}
+		if(blockQueuePtr > BLOCK_QUEUE_SIZE){
+			blockQueuePtr = BLOCK_QUEUE_SIZE;
+		}
 
-
-	__syncthreads();
-	if(i < blockQueuePtr){
-		nextLevelNodes[globalQueueOffset + i] = blockQueue[i];
+		for(int j = 0; j < blockQueuePtr; ++j){
+			nextLevelNodes[atomicAdd(numNextLevelNodes,1)] = blockQueue[j];
+		}
 	}
 }
 
